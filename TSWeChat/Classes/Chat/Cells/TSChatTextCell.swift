@@ -10,7 +10,7 @@ import UIKit
 import YYText
 
 let kChatTextLeft: CGFloat = 72                                         //消息在左边的时候， 文字距离屏幕左边的距离
-let kChatTextMaxWidth: CGFloat = UIScreen.width - kChatTextLeft - 82    //消息在右边， 70：文本离屏幕左的距离，  82：文本离屏幕右的距离
+let kChatTextMaxWidth: CGFloat = UIScreen.ts_width - kChatTextLeft - 82    //消息在右边， 70：文本离屏幕左的距离，  82：文本离屏幕右的距离
 let kChatTextMarginTop: CGFloat = 12                                    //文字的顶部和气泡顶部相差 12 像素
 let kChatTextMarginBottom: CGFloat = 11                                 //文字的底部和气泡底部相差 11 像素
 let kChatTextMarginLeft: CGFloat = 17                                   //文字的左边 和气泡的左边相差 17 ,包括剪头部门
@@ -23,15 +23,15 @@ let kChatBubblePaddingTop: CGFloat = 3                                  //气泡
 let kChatBubbleMaginLeft: CGFloat = 5                                   //气泡和头像的 gap 值：5
 let kChatBubblePaddingBottom: CGFloat = 8                               //气泡距离底部分割线 gap 值：8
 let kChatBubbleLeft: CGFloat = kChatAvatarMarginLeft + kChatAvatarWidth + kChatBubbleMaginLeft  //气泡距离屏幕左的距
-private let kChatTextFont: UIFont = UIFont.systemFontOfSize(16)
+private let kChatTextFont: UIFont = UIFont.systemFont(ofSize: 16)
 
 class TSChatTextCell: TSChatBaseCell {
     @IBOutlet weak var contentLabel: YYLabel! {didSet{
         contentLabel.font = kChatTextFont
 //        contentLabel.debugOption = self.debugYYLabel()
         contentLabel.numberOfLines = 0
-        contentLabel.backgroundColor = UIColor.clearColor()
-        contentLabel.textVerticalAlignment = YYTextVerticalAlignment.Top
+        contentLabel.backgroundColor = UIColor.clear
+        contentLabel.textVerticalAlignment = YYTextVerticalAlignment.top
         contentLabel.displaysAsynchronously = false
         contentLabel.ignoreCommonProperties = true
         contentLabel.highlightTapAction = ({[weak self] containerView, text, range, rect in
@@ -41,19 +41,18 @@ class TSChatTextCell: TSChatBaseCell {
     @IBOutlet weak var bubbleImageView: UIImageView!
     override func awakeFromNib() {
         super.awakeFromNib()
-        // Initialization code
     }
     
     func debugYYLabel() -> YYTextDebugOption {
         let debugOptions = YYTextDebugOption()
-        debugOptions.baselineColor = UIColor.redColor();
-        debugOptions.CTFrameBorderColor = UIColor.redColor();
-        debugOptions.CTLineFillColor = UIColor ( red: 0.0, green: 0.463, blue: 1.0, alpha: 0.18 )
-        debugOptions.CGGlyphBorderColor = UIColor ( red: 0.9971, green: 0.6738, blue: 1.0, alpha: 0.360964912280702 )
+        debugOptions.baselineColor = UIColor.red;
+        debugOptions.ctFrameBorderColor = UIColor.red;
+        debugOptions.ctLineFillColor = UIColor ( red: 0.0, green: 0.463, blue: 1.0, alpha: 0.18 )
+        debugOptions.cgGlyphBorderColor = UIColor ( red: 0.9971, green: 0.6738, blue: 1.0, alpha: 0.360964912280702 )
         return debugOptions
     }
     
-    override func setCellContent(model: ChatModel) {
+    override func setCellContent(_ model: ChatModel) {
         super.setCellContent(model)
         if let richTextLinePositionModifier = model.richTextLinePositionModifier {
             self.contentLabel.linePositionModifier = richTextLinePositionModifier
@@ -69,7 +68,7 @@ class TSChatTextCell: TSChatBaseCell {
 
         //拉伸图片区域
         let stretchImage = model.fromMe ? TSAsset.SenderTextNodeBkg.image : TSAsset.ReceiverTextNodeBkg.image
-        let bubbleImage = stretchImage.resizableImageWithCapInsets(UIEdgeInsetsMake(30, 28, 85, 28), resizingMode: .Stretch)
+        let bubbleImage = stretchImage.resizableImage(withCapInsets: UIEdgeInsets.init(top: 30, left: 28, bottom: 85, right: 28), resizingMode: .stretch)
         self.bubbleImageView.image = bubbleImage;
         self.setNeedsLayout()
     }
@@ -84,7 +83,7 @@ class TSChatTextCell: TSChatBaseCell {
         
         if model.fromMe {
             //value = 屏幕宽 - 头像的边距10 - 头像宽 - 气泡距离头像的 gap 值 - (文字宽 - 2倍的文字和气泡的左右距离 , 或者是最小的气泡图片距离)
-            self.bubbleImageView.left = UIScreen.width - kChatAvatarMarginLeft - kChatAvatarWidth - kChatBubbleMaginLeft - max(self.contentLabel.width + kChatBubbleWidthBuffer, kChatBubbleImageViewWidth)
+            self.bubbleImageView.left = UIScreen.ts_width - kChatAvatarMarginLeft - kChatAvatarWidth - kChatBubbleMaginLeft - max(self.contentLabel.width + kChatBubbleWidthBuffer, kChatBubbleImageViewWidth)
         } else {
             //value = 距离屏幕左边的距离
             self.bubbleImageView.left = kChatBubbleLeft
@@ -101,7 +100,7 @@ class TSChatTextCell: TSChatBaseCell {
         self.contentLabel.left = self.bubbleImageView.left + kChatTextMarginLeft
     }
     
-    class func layoutHeight(model: ChatModel) -> CGFloat {
+    class func layoutHeight(_ model: ChatModel) -> CGFloat {
         if model.cellHeight != 0 {
             return model.cellHeight
         }
@@ -115,7 +114,7 @@ class TSChatTextCell: TSChatBaseCell {
         
         //初始化 YYTextContainer
         let textContainer: YYTextContainer = YYTextContainer()
-        textContainer.size = CGSize(width: kChatTextMaxWidth, height: CGFloat.max)
+        textContainer.size = CGSize(width: kChatTextMaxWidth, height: CGFloat.greatestFiniteMagnitude)
         textContainer.linePositionModifier = modifier
         textContainer.maximumNumberOfRows = 0
 
@@ -132,10 +131,8 @@ class TSChatTextCell: TSChatBaseCell {
         return model.cellHeight
     }
     
-    override func setSelected(selected: Bool, animated: Bool) {
+    override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
-        
-        // Configure the view for the selected state
     }
 
     /**
@@ -144,16 +141,16 @@ class TSChatTextCell: TSChatBaseCell {
      - parameter label:     YYLabel
      - parameter textRange: 高亮文字的 NSRange，不是 range
      */
-    private func didTapRichLabelText(label: YYLabel, textRange: NSRange) {
+    fileprivate func didTapRichLabelText(_ label: YYLabel, textRange: NSRange) {
         //解析 userinfo 的文字
         let attributedString = label.textLayout!.text
         if textRange.location >= attributedString.length {
             return
         }
-        guard let hightlight: YYTextHighlight = attributedString.yy_attribute(YYTextHighlightAttributeName, atIndex: UInt(textRange.location)) as? YYTextHighlight else {
+        guard let hightlight: YYTextHighlight = attributedString.yy_attribute(YYTextHighlightAttributeName, at: UInt(textRange.location)) as? YYTextHighlight else {
             return
         }
-        guard let info = hightlight.userInfo where info.count > 0 else {
+        guard let info = hightlight.userInfo, info.count > 0 else {
             return
         }
         
@@ -169,13 +166,5 @@ class TSChatTextCell: TSChatBaseCell {
             delegate.cellDidTapedLink(self, linkString: URL)
         }
     }
-    
-    /*
-    // Only override drawRect: if you perform custom drawing.
-    // An empty implementation adversely affects performance during animation.
-    override func drawRect(rect: CGRect) {
-    // Drawing code
-    }
-    */
-    
+
 }

@@ -9,6 +9,7 @@
 import UIKit
 import SnapKit
 import RxSwift
+import Dollar
 
 private let kActionViewWidth: CGFloat = 140   //container view width
 private let kActionViewHeight: CGFloat = 190    //container view height
@@ -33,8 +34,8 @@ class TSMessageActionFloatView: UIView {
         super.init(coder: aDecoder)
     }
     
-    private func initContent() {
-        self.backgroundColor = UIColor.clearColor()
+    fileprivate func initContent() {
+        self.backgroundColor = UIColor.clear
         let actionImages = [
             TSAsset.Contacts_add_newmessage.image,
             TSAsset.Barbuttonicon_add_cube.image,
@@ -51,47 +52,49 @@ class TSMessageActionFloatView: UIView {
         
         //Init containerView
         let containerView : UIView = UIView()
-        containerView.backgroundColor = UIColor.clearColor()
+        containerView.backgroundColor = UIColor.clear
         self.addSubview(containerView)
-        containerView.snp_makeConstraints { (make) -> Void in
-            make.top.equalTo(self.snp_top).offset(3)
-            make.right.equalTo(self.snp_right).offset(-5)
+        containerView.snp.makeConstraints { (make) -> Void in
+            make.top.equalTo(self.snp.top).offset(3)
+            make.right.equalTo(self.snp.right).offset(-5)
             make.width.equalTo(kActionViewWidth)
             make.height.equalTo(kActionViewHeight)
         }
         
         //Init bgImageView
-        let stretchInsets = UIEdgeInsetsMake(14, 6, 6, 34)
-        let bubbleMaskImage = TSAsset.MessageRightTopBg.image.resizableImageWithCapInsets(stretchInsets, resizingMode: .Stretch)
+        let stretchInsets = UIEdgeInsets.init(top: 14, left: 6, bottom: 6, right: 34)
+        let bubbleMaskImage = TSAsset.MessageRightTopBg.image.resizableImage(withCapInsets: stretchInsets, resizingMode: .stretch)
         let bgImageView: UIImageView = UIImageView(image: bubbleMaskImage)
         containerView.addSubview(bgImageView)
-        bgImageView.snp_makeConstraints { (make) -> Void in
+        bgImageView.snp.makeConstraints { (make) -> Void in
             make.edges.equalTo(containerView)
         }
         
         //init custom buttons
         var yValue = kFirstButtonY
         for index in 0 ..< actionImages.count {
-            let itemButton: UIButton = UIButton(type: .Custom)
-            itemButton.backgroundColor = UIColor.clearColor()
-            itemButton.titleLabel!.font = UIFont.systemFontOfSize(17)
-            itemButton.setTitleColor(UIColor.whiteColor(), forState: .Normal)
-            itemButton.setTitleColor(UIColor.whiteColor(), forState: .Highlighted)
-            itemButton.setTitle(actionTitles.get(index), forState: .Normal)
-            itemButton.setTitle(actionTitles.get(index), forState: .Highlighted)
-            itemButton.setImage(actionImages.get(index), forState: .Normal)
-            itemButton.setImage(actionImages.get(index), forState: .Highlighted)
-            itemButton.addTarget(self, action: #selector(TSMessageActionFloatView.buttonTaped(_:)), forControlEvents: UIControlEvents.TouchUpInside)
-            itemButton.contentHorizontalAlignment = .Left
-            itemButton.contentEdgeInsets = UIEdgeInsetsMake(0, 12, 0, 0)
-            itemButton.titleEdgeInsets = UIEdgeInsetsMake(0, 10, 0, 0)
+            let itemButton: UIButton = UIButton(type: .custom)
+            itemButton.backgroundColor = UIColor.clear
+            itemButton.titleLabel!.font = UIFont.systemFont(ofSize: 17)
+            itemButton.setTitleColor(UIColor.white, for: UIControl.State())
+            itemButton.setTitleColor(UIColor.white, for: .highlighted)
+            let title = Dollar.fetch(actionTitles, index, orElse: "")
+            itemButton.setTitle(title, for: .normal)
+            itemButton.setTitle(title, for: .highlighted)
+            let image = Dollar.fetch(actionImages, index, orElse: nil)
+            itemButton.setImage(image, for: .normal)
+            itemButton.setImage(image, for: .highlighted)
+            itemButton.addTarget(self, action: #selector(TSMessageActionFloatView.buttonTaped(_:)), for: UIControl.Event.touchUpInside)
+            itemButton.contentHorizontalAlignment = .left
+            itemButton.contentEdgeInsets = UIEdgeInsets.init(top: 0, left: 12, bottom: 0, right: 0)
+            itemButton.titleEdgeInsets = UIEdgeInsets.init(top: 0, left: 10, bottom: 0, right: 0)
             itemButton.tag = index
             containerView.addSubview(itemButton)
             
-            itemButton.snp_makeConstraints { (make) -> Void in
-                make.top.equalTo(containerView.snp_top).offset(yValue)
-                make.right.equalTo(containerView.snp_right)
-                make.width.equalTo(containerView.snp_width)
+            itemButton.snp.makeConstraints { (make) -> Void in
+                make.top.equalTo(containerView.snp.top).offset(yValue)
+                make.right.equalTo(containerView.snp.right)
+                make.width.equalTo(containerView.snp.width)
                 make.height.equalTo(kActionButtonHeight)
             }
             yValue += kActionButtonHeight
@@ -100,14 +103,14 @@ class TSMessageActionFloatView: UIView {
         //add tap to view
         let tap = UITapGestureRecognizer()
         self.addGestureRecognizer(tap)
-        tap.rx_event.subscribeNext { _ in
+        tap.rx.event.subscribe { _ in
             self.hide(true)
-        }.addDisposableTo(self.disposeBag)
+        }.disposed(by:self.disposeBag)
         
-        self.hidden = true
+        self.isHidden = true
     }
     
-    func buttonTaped(sender: UIButton!) {
+    @objc func buttonTaped(_ sender: UIButton!) {
         guard let delegate = self.delegate else {
             self.hide(true)
             return
@@ -123,20 +126,20 @@ class TSMessageActionFloatView: UIView {
      
      - parameter hide: is hide
      */
-    func hide(hide: Bool) {
+    func hide(_ hide: Bool) {
         if hide {
             self.alpha = 1.0
-            UIView.animateWithDuration(0.2 ,
+            UIView.animate(withDuration: 0.2 ,
                 animations: {
                     self.alpha = 0.0
                 },
                 completion: { finish in
-                    self.hidden = true
+                    self.isHidden = true
                     self.alpha = 1.0
             })
         } else {
             self.alpha = 1.0
-            self.hidden = false
+            self.isHidden = false
         }
     }
 
@@ -158,11 +161,11 @@ protocol ActionFloatViewDelegate: class {
     /**
      Tap the item with index
      */
-    func floatViewTapItemIndex(type: ActionFloatViewItemType)
+    func floatViewTapItemIndex(_ type: ActionFloatViewItemType)
 }
 
 enum ActionFloatViewItemType: Int {
-    case GroupChat = 0, AddFriend, Scan, Payment
+    case groupChat = 0, addFriend, scan, payment
 }
 
 

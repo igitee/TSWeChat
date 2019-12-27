@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import TimedSilver
+import Dollar
 
 class TSTabbarViewController: UITabBarController {
     
@@ -33,21 +35,21 @@ class TSTabbarViewController: UITabBarController {
         ]
         
         let viewControllerArray = [
-            TSMessageViewController.initFromNib(),  //消息
-            TSContactsViewController.initFromNib(), //联系人
-            TSDiscoverViewController.initFromNib(), //发现
-            TSMeViewController.initFromNib()   //我
+            TSMessageViewController.ts_initFromNib(),  //消息
+            TSContactsViewController.ts_initFromNib(), //联系人
+            TSDiscoverViewController.ts_initFromNib(), //发现
+            TSMeViewController.ts_initFromNib()   //我
         ]
         
         let navigationVCArray = NSMutableArray()
-        for (index, controller) in viewControllerArray.enumerate() {
-            controller.tabBarItem!.title = titleArray.get(index)
-            controller.tabBarItem!.image = normalImagesArray.get(index).imageWithRenderingMode(.AlwaysOriginal)
-            controller.tabBarItem!.selectedImage = selectedImagesArray.get(index).imageWithRenderingMode(.AlwaysOriginal)
-            controller.tabBarItem!.setTitleTextAttributes([NSForegroundColorAttributeName: UIColor.lightGrayColor()], forState: .Normal)
-            controller.tabBarItem!.setTitleTextAttributes([NSForegroundColorAttributeName: UIColor(colorNamed: TSColor.tabbarSelectedTextColor)], forState: .Selected)
+        for (index, controller) in viewControllerArray.enumerated() {
+            controller.tabBarItem!.title = Dollar.fetch(titleArray, index)
+            controller.tabBarItem!.image = Dollar.fetch(normalImagesArray, index).withRenderingMode(.alwaysOriginal)
+            controller.tabBarItem!.selectedImage = Dollar.fetch(selectedImagesArray, index).withRenderingMode(.alwaysOriginal)
+            controller.tabBarItem!.setTitleTextAttributes([NSAttributedString.Key.foregroundColor: UIColor.lightGray], for: UIControl.State())
+            controller.tabBarItem!.setTitleTextAttributes([NSAttributedString.Key.foregroundColor: UIColor.tabbarSelectedTextColor], for: .selected)
             let navigationController = UINavigationController(rootViewController: controller)
-            navigationVCArray.addObject(navigationController)
+            navigationVCArray.add(navigationController)
         }
         self.viewControllers = navigationVCArray.mutableCopy() as! [UINavigationController]
     }

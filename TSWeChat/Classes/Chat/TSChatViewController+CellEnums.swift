@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - @extension 消息内容 cell 的扩展
 extension MessageContentType {
-    func chatCellHeight(model: ChatModel) -> CGFloat {
+    func chatCellHeight(_ model: ChatModel) -> CGFloat {
         switch self {
         case .Text :
             return TSChatTextCell.layoutHeight(model)
@@ -28,39 +28,39 @@ extension MessageContentType {
         }
     }
     
-    func chatCell(tableView: UITableView, indexPath: NSIndexPath, model: ChatModel, viewController: TSChatViewController) -> UITableViewCell? {
+    func chatCell(_ tableView: UITableView, indexPath: IndexPath, model: ChatModel, viewController: TSChatViewController) -> UITableViewCell? {
         switch self {
         case .Text :
-            let cell = tableView.dequeueReusableCellWithIdentifier(TSChatTextCell.identifier, forIndexPath: indexPath) as! TSChatTextCell
+            let cell: TSChatTextCell = tableView.ts_dequeueReusableCell(TSChatTextCell.self)
             cell.delegate = viewController
             cell.setCellContent(model)
             return cell
             
         case .Image :
-            let cell = tableView.dequeueReusableCellWithIdentifier(TSChatImageCell.identifier, forIndexPath: indexPath) as! TSChatImageCell
+            let cell: TSChatImageCell = tableView.ts_dequeueReusableCell(TSChatImageCell.self)
             cell.delegate = viewController
             cell.setCellContent(model)
             return cell
             
         case .Voice:
-            let cell = tableView.dequeueReusableCellWithIdentifier(TSChatVoiceCell.identifier, forIndexPath: indexPath) as! TSChatVoiceCell
+            let cell: TSChatVoiceCell = tableView.ts_dequeueReusableCell(TSChatVoiceCell.self)
             cell.delegate = viewController
             cell.setCellContent(model)
             return cell
             
         case .System:
-            let cell = tableView.dequeueReusableCellWithIdentifier(TSChatSystemCell.identifier, forIndexPath: indexPath) as! TSChatSystemCell
+            let cell: TSChatSystemCell = tableView.ts_dequeueReusableCell(TSChatSystemCell.self)
             cell.setCellContent(model)
             return cell
-
+            
         case .File:
-            let cell = tableView.dequeueReusableCellWithIdentifier(TSChatVoiceCell.identifier, forIndexPath: indexPath) as! TSChatVoiceCell
+            let cell: TSChatVoiceCell = tableView.ts_dequeueReusableCell(TSChatVoiceCell.self)
             cell.delegate = viewController
             cell.setCellContent(model)
             return cell
             
         case .Time :
-            let cell = tableView.dequeueReusableCellWithIdentifier(TSChatTimeCell.identifier, forIndexPath: indexPath) as! TSChatTimeCell
+            let cell: TSChatTimeCell = tableView.ts_dequeueReusableCell(TSChatTimeCell.self)
             cell.setCellContent(model)
             return cell
         }

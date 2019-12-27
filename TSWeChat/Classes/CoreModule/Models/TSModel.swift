@@ -14,7 +14,7 @@ typealias TSMapper = ObjectMapper.Mapper
 
 
 enum GenderType: Int {
-    case Female = 0, Male
+    case female = 0, male
 }
 
 
@@ -22,7 +22,7 @@ enum GenderType: Int {
 0 - 文本
 1 - 图片
 2 - 语音
-3 - 群组提示信息，例如:高必梵邀请白琳,彭莹加入群聊
+3 - 群组提示信息，例如:A 邀请 B,C 加入群聊
 4 - 文件
 110 - 时间（客户端生成数据）
 */
@@ -50,7 +50,7 @@ enum MessageFromType: String {
         switch (self) {
         case .Personal:
             return TSAsset.Icon_avatar.image
-        case .System, .Group, .PublicServer, PublicSubscribe:
+        case .System, .Group, .PublicServer, .PublicSubscribe:
             return TSAsset.Icon_avatar.image
         }
     }
@@ -58,9 +58,9 @@ enum MessageFromType: String {
 
 //发送消息的状态
 enum MessageSendSuccessType: Int {
-    case Success = 0    //消息发送成功
-    case Failed     //消息发送失败
-    case Sending    //消息正在发送
+    case success = 0    //消息发送成功
+    case failed     //消息发送失败
+    case sending    //消息正在发送
 }
 
 

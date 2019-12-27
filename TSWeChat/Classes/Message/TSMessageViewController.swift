@@ -11,54 +11,56 @@ import SwiftyJSON
 import SnapKit
 
 class TSMessageViewController: UIViewController {
-    @IBOutlet private weak var listTableView: UITableView!
-    private var itemDataSouce = [MessageModel]()
+    @IBOutlet fileprivate weak var listTableView: UITableView!
+    fileprivate var itemDataSouce = [MessageModel]()
     var actionFloatView: TSMessageActionFloatView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "微信"
-        self.view.backgroundColor = UIColor(colorNamed: TSColor.viewBackgroundColor)
-        self.navigationItem.rightButtonAction(TSAsset.Barbuttonicon_add.image) { (Void) -> Void in
-            self.actionFloatView.hide(!self.actionFloatView.hidden)
+        self.view.backgroundColor = UIColor.viewBackgroundColor
+        self.navigationItem.rightButtonAction(TSAsset.Barbuttonicon_add.image) { () -> Void in
+            self.actionFloatView.hide(!self.actionFloatView.isHidden)
         }
         
         //Init ActionFloatView
         self.actionFloatView = TSMessageActionFloatView()
         self.actionFloatView.delegate = self
         self.view.addSubview(self.actionFloatView)
-        self.actionFloatView.snp_makeConstraints { (make) -> Void in
-            make.edges.equalTo(UIEdgeInsetsMake(64, 0, 0, 0))
+        self.actionFloatView.snp.makeConstraints { (make) -> Void in
+            make.edges.equalTo(UIEdgeInsets.init(top: 64, left: 0, bottom: 0, right: 0))
         }
         
         //Init listTableView
-        self.listTableView.registerNib(TSMessageTableViewCell.NibObject(), forCellReuseIdentifier: TSMessageTableViewCell.identifier)
+        self.listTableView.ts_registerCellNib(TSMessageTableViewCell.self)
         self.listTableView.estimatedRowHeight = 65
         self.listTableView.tableFooterView = UIView()
         
         self.fetchData()
     }
     
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         self.actionFloatView.hide(true)
     }
     
-    private func fetchData() {
-        guard let JSONData = NSData.dataFromJSONFile("message") else { return }
-        let jsonObject = JSON(data: JSONData)
-        if jsonObject != JSON.null {
+    fileprivate func fetchData() {
+        guard let JSONData = Data.ts_dataFromJSONFile("message") else { return }
+        do {
+            let jsonObject = try JSON(data: JSONData)
             var list = [MessageModel]()
             for dict in jsonObject["data"].arrayObject! {
-                guard let model = TSMapper<MessageModel>().map(dict) else { continue }
-                list.insert(model, atIndex: list.count)
+                guard let model = TSMapper<MessageModel>().map(JSON: dict as! [String : Any]) else { continue }
+                list.insert(model, at: list.count)
             }
             //Insert more data, make the UITableView long and long.  XD
-            self.itemDataSouce.insertContentsOf(list, at: 0)
-            self.itemDataSouce.insertContentsOf(list, at: 0)
-            self.itemDataSouce.insertContentsOf(list, at: 0)
-            self.itemDataSouce.insertContentsOf(list, at: 0)
+            self.itemDataSouce.insert(contentsOf: list, at: 0)
+            self.itemDataSouce.insert(contentsOf: list, at: 0)
+            self.itemDataSouce.insert(contentsOf: list, at: 0)
+            self.itemDataSouce.insert(contentsOf: list, at: 0)
             self.listTableView.reloadData()
+        } catch {
+            print("Error \(error)")
         }
     }
     
@@ -74,9 +76,9 @@ class TSMessageViewController: UIViewController {
 
 // MARK: - @protocol UITableViewDelegate
 extension TSMessageViewController: UITableViewDelegate {
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
-        let viewController = TSChatViewController.initFromNib() as! TSChatViewController
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let viewController = TSChatViewController.ts_initFromNib() as! TSChatViewController
         viewController.messageModel = self.itemDataSouce[indexPath.row]
         self.ts_pushAndHideTabbar(viewController)
     }
@@ -84,20 +86,20 @@ extension TSMessageViewController: UITableViewDelegate {
 
 // MARK: - @protocol UITableViewDataSource
 extension TSMessageViewController: UITableViewDataSource {
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.itemDataSouce.count
     }
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return self.listTableView.estimatedRowHeight
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(TSMessageTableViewCell.identifier, forIndexPath: indexPath) as! TSMessageTableViewCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell: TSMessageTableViewCell = tableView.ts_dequeueReusableCell(TSMessageTableViewCell.self)
         cell.setCellContnet(self.itemDataSouce[indexPath.row])
         return cell
     }
@@ -105,16 +107,16 @@ extension TSMessageViewController: UITableViewDataSource {
 
 // MARK: - @protocol ActionFloatViewDelegate
 extension TSMessageViewController: ActionFloatViewDelegate {
-    func floatViewTapItemIndex(type: ActionFloatViewItemType) {
+    func floatViewTapItemIndex(_ type: ActionFloatViewItemType) {
         log.info("floatViewTapItemIndex:\(type)")
         switch type {
-        case .GroupChat:
+        case .groupChat:
             break
-        case .AddFriend:
+        case .addFriend:
             break
-        case .Scan:
+        case .scan:
             break
-        case .Payment:
+        case .payment:
             break
         }
     }

@@ -8,8 +8,8 @@
 
 import UIKit
 
-private let kChatInfoFont: UIFont = UIFont.systemFontOfSize(13)
-private let kChatInfoLabelMaxWdith : CGFloat = UIScreen.width - 40*2
+private let kChatInfoFont: UIFont = UIFont.systemFont(ofSize: 13)
+private let kChatInfoLabelMaxWdith : CGFloat = UIScreen.ts_width - 40*2
 private let kChatInfoLabelPaddingLeft: CGFloat = 8   //左右分别留出 8 像素的留白
 private let kChatInfoLabelPaddingTop: CGFloat = 4   //上下分别留出 4 像素的留白
 private let kChatInfoLabelMarginTop: CGFloat = 3  //距离顶部
@@ -27,17 +27,17 @@ class TSChatSystemCell: UITableViewCell {
         infomationLabel.layer.cornerRadius = 4
         infomationLabel.layer.masksToBounds = true
         infomationLabel.font = kChatInfoFont
-        infomationLabel.textColor = UIColor.whiteColor()
+        infomationLabel.textColor = UIColor.white
         infomationLabel.backgroundColor = UIColor (red: 190/255, green: 190/255, blue: 190/255, alpha: 0.6 )
         }}
     var model: ChatModel?
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.selectionStyle = .None
+        self.selectionStyle = .none
     }
     
-    func setCellContent(model: ChatModel) {
+    func setCellContent(_ model: ChatModel) {
         self.model = model
         self.infomationLabel.text = model.messageContent
     }
@@ -46,29 +46,27 @@ class TSChatSystemCell: UITableViewCell {
         guard let model = self.model else {
             return
         }
-        self.infomationLabel.setFrameWithString(model.messageContent!, width: kChatInfoLabelMaxWdith)
+        self.infomationLabel.ts_setFrameWithString(model.messageContent!, width: kChatInfoLabelMaxWdith)
         self.infomationLabel.width = self.infomationLabel.width + kChatInfoLabelPaddingLeft*2  //左右的留白
         self.infomationLabel.height = self.infomationLabel.height + kChatInfoLabelPaddingTop*2   //上下的留白
-        self.infomationLabel.left = (UIScreen.width - self.infomationLabel.width) / 2
+        self.infomationLabel.left = (UIScreen.ts_width - self.infomationLabel.width) / 2
         self.infomationLabel.top = kChatInfoLabelMarginTop
     }
     
-    class func layoutHeight(model: ChatModel) -> CGFloat {
+    class func layoutHeight(_ model: ChatModel) -> CGFloat {
         if model.cellHeight != 0 {
             return model.cellHeight
         }
         var height: CGFloat = 0
         height += kChatInfoLabelMarginTop + kChatInfoLabelMarginTop
-        let stringHeight: CGFloat = model.messageContent!.stringHeightWithMaxWidth(kChatInfoLabelMaxWdith, font: kChatInfoFont)
+        let stringHeight: CGFloat = model.messageContent!.ts_heightWithConstrainedWidth(kChatInfoLabelMaxWdith, font: kChatInfoFont)
         height += stringHeight + kChatInfoLabelPaddingTop*2
         model.cellHeight = height
         return model.cellHeight
     }
     
-    override func setSelected(selected: Bool, animated: Bool) {
+    override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
-        
-        // Configure the view for the selected state
     }
     
 }

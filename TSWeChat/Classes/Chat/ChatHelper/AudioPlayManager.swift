@@ -10,11 +10,14 @@ import Foundation
 import AVFoundation
 import Alamofire
 import TSVoiceConverter
+import RxSwift
+import RxBlocking
 
 let AudioPlayInstance = AudioPlayManager.sharedInstance
 
 class AudioPlayManager: NSObject {
-    private var audioPlayer: AVAudioPlayer?
+    fileprivate var audioPlayer: AVAudioPlayer?
+    internal let disposeBag = DisposeBag()
     weak var delegate: PlayAudioDelegate?
     
     class var sharedInstance : AudioPlayManager {
@@ -24,30 +27,27 @@ class AudioPlayManager: NSObject {
         return Static.instance
     }
     
-    private override init() {
+    fileprivate override init() {
         super.init()
         //监听听筒和扬声器
-        let notificationCenter = NSNotificationCenter.defaultCenter()
-        notificationCenter.addObserver(self, name: UIDeviceProximityStateDidChangeNotification, object: UIDevice.currentDevice(), handler: {
-            observer, notification in
-            if UIDevice.currentDevice().proximityState {
+        let center = NotificationCenter.default.rx.notification(Notification.Name(rawValue: UIDevice.proximityStateDidChangeNotification.rawValue), object: UIDevice.current)
+        center.subscribe { notification in
+            if UIDevice.current.proximityState {
                 do {
-                    try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayAndRecord)
+                    try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playAndRecord)))
                 } catch _ {}
             } else {
                 do {
-                    try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
+                    try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playback)))
                 } catch _ {}
             }
-        })
+        }.dispose()
     }
     
-    func startPlaying(audioModel: ChatAudioModel) {
-        if AVAudioSession.sharedInstance().category == AVAudioSessionCategoryRecord {
-            do {
-                try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
-            } catch _ {}
-        }
+    func startPlaying(_ audioModel: ChatAudioModel) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category(rawValue: convertFromAVAudioSessionCategory(AVAudioSession.Category.playback)))
+        } catch _ {}
         
         guard let keyHash = audioModel.keyHash else {
             self.delegate?.audioPlayFailed()
@@ -55,14 +55,14 @@ class AudioPlayManager: NSObject {
         }
         //已有 wav 文件，直接播放
         let wavFilePath = AudioFilesManager.wavPathWithName(keyHash)
-        if NSFileManager.defaultManager().fileExistsAtPath(wavFilePath.path!) {
-            self.playSoundWithPath(wavFilePath.path!)
+        if FileManager.default.fileExists(atPath: wavFilePath.path) {
+            self.playSoundWithPath(wavFilePath.path)
             return
         }
         
         //已有 amr 文件，转换，再进行播放
         let amrFilePath = AudioFilesManager.amrPathWithName(keyHash)
-        if NSFileManager.defaultManager().fileExistsAtPath(amrFilePath.path!) {
+        if FileManager.default.fileExists(atPath: amrFilePath.path) {
             self.convertAmrToWavAndPlaySound(audioModel)
             return
         }
@@ -72,8 +72,8 @@ class AudioPlayManager: NSObject {
     }
     
     // AVAudioPlayer 只能播放 wav 格式，不能播放 amr
-    private func playSoundWithPath(path: String) {
-        let fileData = NSData(contentsOfFile: path)
+    fileprivate func playSoundWithPath(_ path: String) {
+        let fileData = try? Data(contentsOf: URL(fileURLWithPath: path))
         do {
             self.audioPlayer = try AVAudioPlayer(data: fileData!)
             
@@ -88,7 +88,7 @@ class AudioPlayManager: NSObject {
             }
             
             if player.play() {
-                UIDevice.currentDevice().proximityMonitoringEnabled = true
+                UIDevice.current.isProximityMonitoringEnabled = true
                 delegate.audioPlayStart()
             } else {
                 delegate.audioPlayFailed()
@@ -108,22 +108,22 @@ class AudioPlayManager: NSObject {
         }
         self.audioPlayer!.delegate = nil
         self.audioPlayer!.stop()
+        self.audioPlayer?.prepareToPlay() //重置AVAudioSession
         self.audioPlayer = nil
-        UIDevice.currentDevice().proximityMonitoringEnabled = false
+        UIDevice.current.isProximityMonitoringEnabled = false
     }
     
     // 转换，并且播放声音
-    private func convertAmrToWavAndPlaySound(audioModel: ChatAudioModel) {
+    fileprivate func convertAmrToWavAndPlaySound(_ audioModel: ChatAudioModel) {
         if self.audioPlayer != nil {
             self.stopPlayer()
         }
         
-        guard let fileName = audioModel.keyHash where fileName.length > 0 else { return}
+        guard let fileName = audioModel.keyHash, fileName.count > 0 else { return}
 
-        let amrPathString = AudioFilesManager.amrPathWithName(fileName).path!
-        let wavPathString = AudioFilesManager.wavPathWithName(fileName).path!
-        
-        if NSFileManager.defaultManager().fileExistsAtPath(wavPathString) {
+        let amrPathString = AudioFilesManager.amrPathWithName(fileName).path
+        let wavPathString = AudioFilesManager.wavPathWithName(fileName).path        
+        if FileManager.default.fileExists(atPath: wavPathString) {
             self.playSoundWithPath(wavPathString)
         } else {
             if TSVoiceConverter.convertAmrToWav(amrPathString, wavSavePath: wavPathString) {
@@ -139,14 +139,14 @@ class AudioPlayManager: NSObject {
     /**
      使用 Alamofire 下载并且存储文件
      */
-    private func downloadAudio(audioModel: ChatAudioModel) {
+    fileprivate func downloadAudio(_ audioModel: ChatAudioModel) {
         let fileName = audioModel.keyHash!
         let filePath = AudioFilesManager.amrPathWithName(fileName)
-        let destination: (NSURL, NSHTTPURLResponse) -> (NSURL) = { (temporaryURL, response)  in
+        let destination: (URL, HTTPURLResponse) -> (URL) = { (temporaryURL, response)  in
             log.info("checkAndDownloadAudio response:\(response)")
             if response.statusCode == 200 {
-                if NSFileManager.defaultManager().fileExistsAtPath(filePath.path!) {
-                    try! NSFileManager.defaultManager().removeItemAtURL(filePath)
+                if FileManager.default.fileExists(atPath: filePath.path) {
+                    try! FileManager.default.removeItem(at: filePath)
                 }
                 log.info("filePath:\(filePath)")
                 return filePath
@@ -155,23 +155,17 @@ class AudioPlayManager: NSObject {
             }
         }
         
-        Alamofire.download(.GET, audioModel.audioURL!, destination: destination)
-            .progress { bytesRead, totalBytesRead, totalBytesExpectedToRead in
-                print(totalBytesRead)
-                
-                // This closure is NOT called on the main queue for performance
-                // reasons. To update your ui, dispatch to the main queue.
-                dispatch_async(dispatch_get_main_queue()) {
-                    log.info("Total bytes read on main queue: \(totalBytesRead)")
-                }
+        Alamofire.download(audioModel.audioURL!)
+            .downloadProgress { progress in
+                print("Download Progress: \(progress.fractionCompleted)")
             }
-            .response { [weak self] request, response, _, error in
-                if let error = error, let delegate = self!.delegate {
+            .responseData { response in
+                if let error = response.result.error, let delegate = self.delegate {
                     log.error("Failed with error: \(error)")
                     delegate.audioPlayFailed()
                 } else {
                     log.info("Downloaded file successfully")
-                    self!.convertAmrToWavAndPlaySound(audioModel)
+                    self.convertAmrToWavAndPlaySound(audioModel)
                 }
         }
     }
@@ -179,9 +173,9 @@ class AudioPlayManager: NSObject {
 
 // MARK: - @protocol AVAudioPlayerDelegate
 extension AudioPlayManager: AVAudioPlayerDelegate {
-    func audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully flag: Bool) {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         log.info("Finished playing the song")
-        UIDevice.currentDevice().proximityMonitoringEnabled = false
+        UIDevice.current.isProximityMonitoringEnabled = false
         if flag {
             self.delegate?.audioPlayFinished()
         } else {
@@ -190,28 +184,24 @@ extension AudioPlayManager: AVAudioPlayerDelegate {
         self.stopPlayer()
     }
     
-    func audioPlayerDecodeErrorDidOccur(player: AVAudioPlayer, error: NSError?) {
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
         self.stopPlayer()
         self.delegate?.audioPlayFailed()
     }
     
-    func audioPlayerBeginInterruption(player: AVAudioPlayer) {
+    func audioPlayerBeginInterruption(_ player: AVAudioPlayer) {
         self.stopPlayer()
         self.delegate?.audioPlayFailed()
     }
     
-    func audioPlayerEndInterruption(player: AVAudioPlayer, withOptions flags: Int) {
+    func audioPlayerEndInterruption(_ player: AVAudioPlayer, withOptions flags: Int) {
         
     }
 }
 
 
 
-
-
-
-
-
-
-
-
+// Helper function inserted by Swift 4.2 migrator.
+fileprivate func convertFromAVAudioSessionCategory(_ input: AVAudioSession.Category) -> String {
+	return input.rawValue
+}

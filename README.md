@@ -6,12 +6,12 @@
 <a href="https://github.com/hilen/TSWeChat/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat"></a>
 <a href="http://twitter.com/hilenlai"><img src="https://img.shields.io/badge/twitter-@hilenlai-blue.svg?style=flat"></a>
 
-TSWeChat - A [WeChat](https://itunes.apple.com/cn/app/wei/id414478124) alternative, written in Swift. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[中文说明](Chinese_README.md)
+TSWeChat - A [WeChat](https://itunes.apple.com/cn/app/wei/id414478124) alternative, updated to Swift 5. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[中文说明](Chinese_README.md)
 
 ## Requirements
-- [Cocoapods](https://github.com/CocoaPods/CocoaPods) 0.39.0 +
-- iOS 8.0+ / Mac OS X 10.9+
-- Xcode 7.3+
+- [Cocoapods](https://github.com/CocoaPods/CocoaPods) 1.2.0 +
+- iOS 10.0+ / Mac OS X 10.9+
+- Xcode 10.0+
 
 
 ## Features
@@ -70,11 +70,8 @@ TSWeChat is released under the MIT license. See [LICENSE](https://github.com/hil
 - Multilanguage support
 - And so on...
 
-##Contributing
+## Contributing
 - All kinds of contributions (enhancements, new features, documentation & code improvements, issues & bugs reporting & todo task) are welcome. Let's make it better. XD
-
-##Contact
-Follow and contact me on [Twitter](http://twitter.com/hilenlai) or [Sina Weibo](http://weibo.com/laihailong).
 
 
 

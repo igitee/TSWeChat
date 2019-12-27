@@ -10,7 +10,7 @@ import UIKit
 
 class TSDiscoverViewController: UIViewController {
     @IBOutlet weak var listTableView: UITableView!
-    private let itemDataSouce: [[(name: String, iconImage: UIImage)]] = [
+    fileprivate let itemDataSouce: [[(name: String, iconImage: UIImage)]] = [
         [
             ("朋友圈", TSAsset.Ff_IconShowAlbum.image),
         ],
@@ -30,9 +30,8 @@ class TSDiscoverViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = "发现"
-        self.view.backgroundColor = UIColor(colorNamed: TSColor.viewBackgroundColor)
-        
-        self.listTableView.registerNib(TSImageTextTableViewCell.NibObject(), forCellReuseIdentifier: TSImageTextTableViewCell.identifier)
+        self.view.backgroundColor = UIColor.viewBackgroundColor
+        self.listTableView.ts_registerCellNib(TSImageTextTableViewCell.self)
         self.listTableView.estimatedRowHeight = 44
         self.listTableView.tableFooterView = UIView()
 
@@ -63,7 +62,7 @@ class TSDiscoverViewController: UIViewController {
 
 // MARK: @protocol - UITableViewDelegate
 extension TSDiscoverViewController: UITableViewDelegate {
-    func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         if section == 0 {
             return 15
         } else {
@@ -71,32 +70,32 @@ extension TSDiscoverViewController: UITableViewDelegate {
         }
     }
     
-    func tableView(tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return 0.00001
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
 // MARK: @protocol - UITableViewDataSource
 extension TSDiscoverViewController: UITableViewDataSource {
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return self.itemDataSouce.count
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         let rows = self.itemDataSouce[section]
         return rows.count
     }
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return self.listTableView.estimatedRowHeight
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(TSImageTextTableViewCell.identifier, forIndexPath: indexPath) as! TSImageTextTableViewCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell :TSImageTextTableViewCell = tableView.ts_dequeueReusableCell(TSImageTextTableViewCell.self)
         let item = self.itemDataSouce[indexPath.section][indexPath.row]
         cell.iconImageView.image = item.iconImage
         cell.titleLabel.text = item.name

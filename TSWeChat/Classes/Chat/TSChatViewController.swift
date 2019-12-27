@@ -9,9 +9,10 @@
 import UIKit
 import SnapKit
 import RxSwift
-import BSImagePicker
+//import BSImagePicker
 import Photos
 import SwiftyJSON
+import Dollar
 
 /*
 *   聊天详情的 ViewController
@@ -24,11 +25,11 @@ final class TSChatViewController: UIViewController {
     @IBOutlet weak var indicatorView: UIActivityIndicatorView!
     
     lazy var listTableView: UITableView = {
-        let listTableView = UITableView(frame: CGRect.zero, style: .Plain)
+        let listTableView = UITableView(frame: CGRect.zero, style: .plain)
         listTableView.dataSource = self
         listTableView.delegate = self
-        listTableView.backgroundColor = UIColor.clearColor()
-        listTableView.separatorStyle = .None
+        listTableView.backgroundColor = UIColor.clear
+        listTableView.separatorStyle = .none
         // This background image is stolen from Telegram App
         listTableView.backgroundView = UIImageView(image: TSAsset.Chat_background.image)
         return listTableView
@@ -50,18 +51,21 @@ final class TSChatViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.title = self.messageModel!.nickname!
-        self.view.backgroundColor = UIColor(colorNamed: TSColor.viewBackgroundColor)
-        self.navigationController!.interactivePopGestureRecognizer!.enabled = true
+        self.view.backgroundColor = UIColor.viewBackgroundColor
+        self.navigationController!.interactivePopGestureRecognizer!.isEnabled = true
 
         //TableView init
-        self.listTableView.registerNib(TSChatTextCell.NibObject(), forCellReuseIdentifier: TSChatTextCell.identifier)
-        self.listTableView.registerNib(TSChatImageCell.NibObject(), forCellReuseIdentifier: TSChatImageCell.identifier)
-        self.listTableView.registerNib(TSChatVoiceCell.NibObject(), forCellReuseIdentifier: TSChatVoiceCell.identifier)
-        self.listTableView.registerNib(TSChatSystemCell.NibObject(), forCellReuseIdentifier: TSChatSystemCell.identifier)
-        self.listTableView.registerNib(TSChatTimeCell.NibObject(), forCellReuseIdentifier: TSChatTimeCell.identifier)
+        self.listTableView.ts_registerCellNib(TSChatTextCell.self)
+        self.listTableView.ts_registerCellNib(TSChatImageCell.self)
+        self.listTableView.ts_registerCellNib(TSChatVoiceCell.self)
+        self.listTableView.ts_registerCellNib(TSChatSystemCell.self)
+        self.listTableView.ts_registerCellNib(TSChatTimeCell.self)
         self.listTableView.tableFooterView = UIView()
         self.listTableView.tableHeaderView = self.refreshView
-        
+        self.listTableView.estimatedRowHeight = 0;
+        self.listTableView.estimatedSectionHeaderHeight = 0;
+        self.listTableView.estimatedSectionFooterHeight = 0;
+
         //初始化子 View，键盘控制，动作 bar
         self.setupSubviews(self)
         self.keyboardControl()
@@ -76,13 +80,13 @@ final class TSChatViewController: UIViewController {
         self.firstFetchMessageList()
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         AudioRecordInstance.checkPermissionAndSetupRecord()
         self.checkCameraPermission()
     }
     
-    override func viewWillDisappear(animated: Bool) {
-        NSNotificationCenter.defaultCenter().removeObserver(self)
+    override func viewWillDisappear(_ animated: Bool) {
+        NotificationCenter.default.removeObserver(self)
         AudioPlayInstance.stopPlayer()
     }
     
@@ -99,33 +103,31 @@ final class TSChatViewController: UIViewController {
 
 // MARK: - @protocol UITableViewDelegate
 extension TSChatViewController: UITableViewDelegate {
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
 
 // MARK: - @protocol UITableViewDataSource
 extension TSChatViewController: UITableViewDataSource {
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.itemDataSouce.count
     }
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
-        let chatModel = self.itemDataSouce.get(indexPath.row)
-        guard let type: MessageContentType = chatModel.messageContentType where chatModel != nil else { return 0 }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard let chatModel = Dollar.fetch(self.itemDataSouce, indexPath.row) else {return 0}
+        let type: MessageContentType = chatModel.messageContentType
         return type.chatCellHeight(chatModel)
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let chatModel = self.itemDataSouce.get(indexPath.row)
-        guard let type: MessageContentType = chatModel.messageContentType where chatModel != nil else {
-            return TSChatBaseCell()
-        }
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let chatModel = Dollar.fetch(self.itemDataSouce, indexPath.row) else {return TSChatBaseCell()}
+        let type: MessageContentType = chatModel.messageContentType
         return type.chatCell(tableView, indexPath: indexPath, model: chatModel, viewController: self)!
     }
 }
@@ -133,7 +135,7 @@ extension TSChatViewController: UITableViewDataSource {
 
 // MARK: - @protocol UIScrollViewDelegate
 extension TSChatViewController: UIScrollViewDelegate {
-    func scrollViewDidScroll(scrollView: UIScrollView) {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if (scrollView.contentOffset.y < kChatLoadMoreOffset) {
             if self.isEndRefreshing {
                 log.info("pull to refresh");
@@ -142,11 +144,11 @@ extension TSChatViewController: UIScrollViewDelegate {
         }
     }
     
-    func scrollViewWillBeginDragging(scrollView: UIScrollView) {
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         self.hideAllKeyboard()
     }
     
-    func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if (scrollView.contentOffset.y - scrollView.contentInset.top < kChatLoadMoreOffset) {
             if self.isEndRefreshing {
                 log.info("pull to refresh");
